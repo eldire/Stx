@@ -1,0 +1,143 @@
+String entrada;
+String readString;
+String readStringRaw;
+String readString1;
+String readStringRaw1;
+String readStringRaw2;
+const byte numChars = 230;
+char receivedChars[numChars];
+int incomingByte = 0;
+String subcadena;
+String dato;
+String valor;
+String Cadena;
+int numBytes;
+char t;
+//Definicion variables Globales
+char STX = '\x002';
+char NUL = '\x020';
+char ETX = '\x003';
+String HELLO = "0220200003";//0220200003;
+
+//Definicion variables loop
+bool FlagInicio = true; 
+
+void setup() {
+  Serial.begin(57600);
+  //lcd.begin(16, 2);
+
+}
+
+void loop() {
+    readStringRaw1 = Leer();
+    if ((readStringRaw1 == "0220200003") and (FlagInicio==true)){
+      byte arrayBytes [] = {STX, NUL, 0x30, 0x10, ETX}; // Mandamos <STX>  0<DLE><ETX>
+      Serial.write(arrayBytes, 5);
+      delay(500);
+      byte arrayBytes1 [] = {STX, 0x31, 0x31, 0x53, 0x30, NUL, 0x43, ETX}; // Mandamos <STX> 11S0 C<ETX>
+      Serial.write(arrayBytes1, 8);
+      delay(500);
+      byte arrayBytes2 [] = {STX, 0x32, 0x32, 0x3F, 0x76, 0x31, 0x30, 0x32, 0x36, 0x4C, ETX}; // Mandamos <STX> 22?v1026L<ETX>
+      Serial.write(arrayBytes2, 11);
+      delay(500);
+      byte arrayBytes3 [] = {STX, 0x33, 0x32, 0x53, 0x30, NUL, 0x42, ETX}; // Mandamos <STX> 32S0 B<ETX>
+      Serial.write(arrayBytes3, 8);
+      FlagInicio=false;
+    } 
+    Comprobar(readStringRaw1);
+    Borrar();
+}
+String Leer(){
+  while (Serial.available()>0){
+    int numBytes = Serial.available();
+    for (int n = 0; n < numBytes; n++) {
+      incomingByte = Serial.read();
+      //String data = Serial.readStringUntil('03');
+      //Serial.print(data);
+      readString = String(incomingByte, HEX);
+      if (readString.length() == 1) {
+        readStringRaw += "0" + readString;
+      } else {
+        readStringRaw += readString;
+      }
+
+    }
+    
+    if ((readStringRaw.startsWith("02") == true && (readStringRaw.endsWith("03") == true))) {
+      int readStringRaw_len = readStringRaw.length();
+      char readStringRaw_array[readStringRaw_len];
+      readStringRaw.toCharArray(readStringRaw_array, readStringRaw_len);
+      return readStringRaw;
+      
+    } 
+    
+  }
+}
+void Borrar(){
+  while(Serial.available() > 0) {
+    t = Serial.read();
+    readStringRaw="";
+    readStringRaw1="";
+    numBytes=0;
+    readString="";
+  }
+  //t=' ';
+}
+void Imprimir(){
+      subcadena = readStringRaw1;
+      if (subcadena.charAt(5)=='9'){
+        valor="1";
+      } else{
+        valor=subcadena.charAt(5)+1;
+      }
+      byte Cadena [] = {valor.charAt(0),subcadena.charAt(1), 0x53, 0x30, 0x20};
+      uint8_t value = 0;
+      for (size_t i = 0; i < 5  ; i++)
+        {
+          value ^= (uint8_t)Cadena[i];
+        }
+      byte chksum [] = {0x02, valor.charAt(0),subcadena.charAt(1),  0x53, 0x30, 0x20, value , 0x03};
+      delay(4000);
+      Serial.write(chksum, 8);
+      //Borrar();
+}
+void Comprobar(String string){
+  //Serial.println(string);
+  if (string.substring(6,8) == "4B" or string.substring(6,8) == "4b" or string.substring(6,8) == "6B" or string.substring(6,8) == "6b") {
+      FlagInicio=true;
+  } 
+  if (string.startsWith("02 28")) {
+    Serial.println("Mensaje para el lcd");
+  //  Serial.println(string.substring(10,50));
+  }
+  if (string == "0232311b0403"){ //21
+      Imprimir(); 
+  }
+  if (string == "0232320003"){ //22
+      Imprimir();
+  }    
+  if (string == "0232330103"){ //23
+      Imprimir();
+  }  
+  if (string == "0232340603"){ //24
+      Imprimir();
+  }  
+  if (string == "0232350703"){ //25
+      Imprimir();
+  }  
+  if (string == "0232360403"){ //26
+      Imprimir();
+  } 
+  if (string == "0232370503"){ //27
+      Imprimir();
+  } 
+  if (string == "0232380a03"){ //28
+      Imprimir();
+  } 
+  if (string == "0232390b03"){ //29
+      Imprimir();
+  }
+}
+void Lcd(){
+  Serial.println(readStringRaw.substring(50));
+}
